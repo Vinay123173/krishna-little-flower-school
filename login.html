@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login | Krishna Little Flower School ERP</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Noto+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#16233F; --gold:#C9942E; --gold-light:#E7C468;
+    --diya:#E1672B; --ivory:#FBF6EC; --maroon:#7A2048;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    font-family:'Noto Sans',sans-serif;
+    background:linear-gradient(160deg, var(--ink) 0%, #1f3563 55%, var(--maroon) 130%);
+    min-height:100vh;
+    display:flex; align-items:center; justify-content:center;
+    padding:20px;
+  }
+  .card{
+    background:var(--ivory);
+    border-radius:14px;
+    max-width:400px; width:100%;
+    padding:36px 32px;
+    box-shadow:0 20px 50px rgba(0,0,0,.35);
+    border-top:5px solid var(--gold);
+  }
+  .card h1{
+    font-family:'Baloo 2'; font-weight:800; font-size:1.3rem;
+    color:var(--ink); text-align:center; margin-bottom:4px;
+  }
+  .card .sub{
+    text-align:center; font-size:.85rem; color:var(--maroon); margin-bottom:24px; font-weight:600;
+  }
+  label{font-size:.82rem; font-weight:600; color:#3b4560; display:block; margin-bottom:6px;}
+  select, input{
+    width:100%; padding:11px 12px; border-radius:7px;
+    border:1.5px solid #d8dbe8; margin-bottom:16px; font-size:.95rem;
+    font-family:'Noto Sans',sans-serif;
+  }
+  select:focus, input:focus{outline:none; border-color:var(--gold);}
+  button{
+    width:100%; padding:12px; border-radius:7px; border:none;
+    background:var(--diya); color:#fff; font-weight:700; font-size:.95rem;
+    cursor:pointer; transition:transform .15s ease;
+  }
+  button:hover{transform:translateY(-2px);}
+  button:disabled{opacity:.6; cursor:not-allowed;}
+  #msg{
+    margin-top:14px; font-size:.85rem; text-align:center; min-height:20px;
+  }
+  #msg.error{color:#b3261e;}
+  #msg.success{color:#2F6B3C;}
+  .logo-row{display:flex; justify-content:center; margin-bottom:14px;}
+  .logo-row img{height:56px;}
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="logo-row"><img src="assets/logo.png" alt="Logo" onerror="this.style.display='none'"></div>
+  <h1>Krishna Little Flower School</h1>
+  <div class="sub">ERP Login · कृष्णा लिटिल फ्लावर स्कूल</div>
+
+  <form id="loginForm">
+    <label for="role">Login as / भूमिका चुनें</label>
+    <select id="role" required>
+      <option value="" disabled selected>Select role</option>
+      <option value="admin">Admin</option>
+      <option value="teacher">Teacher</option>
+      <option value="student">Student</option>
+      <option value="parent">Parent</option>
+    </select>
+
+    <label for="email">Email</label>
+    <input type="email" id="email" required placeholder="you@example.com">
+
+    <label for="password">Password</label>
+    <input type="password" id="password" required placeholder="••••••••">
+
+    <button type="submit" id="loginBtn">Log In</button>
+  </form>
+  <div id="msg"></div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+  import {
+    getAuth, signInWithEmailAndPassword
+  } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+  import {
+    getFirestore, doc, getDoc
+  } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
+
+  // ---- Your real project config ----
+  const firebaseConfig = {
+    apiKey: "AIzaSyBrUPqnt05h_mGhEiITbibjvNpRkYUeRGA",
+    authDomain: "krishna-little-flower-school.firebaseapp.com",
+    projectId: "krishna-little-flower-school",
+    storageBucket: "krishna-little-flower-school.firebasestorage.app",
+    messagingSenderId: "891624867189",
+    appId: "1:891624867189:web:d917348216f3c2178c7f3c"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  const form = document.getElementById('loginForm');
+  const msg = document.getElementById('msg');
+  const btn = document.getElementById('loginBtn');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    msg.textContent = '';
+    msg.className = '';
+    btn.disabled = true;
+    btn.textContent = 'Checking...';
+
+    const chosenRole = document.getElementById('role').value;
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+
+    try {
+      // 1. Sign in with Firebase Auth
+      const cred = await signInWithEmailAndPassword(auth, email, password);
+      const uid = cred.user.uid;
+
+      // 2. Look up this user's role in Firestore (users/{uid})
+      const userDoc = await getDoc(doc(db, "users", uid));
+
+      if (!userDoc.exists()) {
+        msg.textContent = "आपका account अभी role के साथ setup नहीं हुआ है। Admin से संपर्क करें।";
+        msg.className = "error";
+        await auth.signOut();
+        return;
+      }
+
+      const data = userDoc.data();
+
+      // 3. Confirm the role matches what they selected (prevents role confusion)
+      if (data.role !== chosenRole) {
+        msg.textContent = `यह account "${data.role}" के रूप में registered है, "${chosenRole}" नहीं। सही role चुनें।`;
+        msg.className = "error";
+        await auth.signOut();
+        return;
+      }
+
+      msg.textContent = `Welcome, ${data.name || email}! Redirecting...`;
+      msg.className = "success";
+
+      // 4. Redirect based on role (these pages come in later phases)
+      setTimeout(() => {
+        window.location.href = `${data.role}-dashboard.html`;
+      }, 1000);
+
+    } catch (err) {
+      console.error(err);
+      if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found') {
+        msg.textContent = "Email या password गलत है।";
+      } else {
+        msg.textContent = "Login में समस्या हुई। दोबारा कोशिश करें।";
+      }
+      msg.className = "error";
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Log In";
+    }
+  });
+</script>
+
+</body>
+</html>
