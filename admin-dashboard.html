@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Student Management | Krishna Little Flower School ERP</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Noto+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#16233F; --gold:#C9942E; --gold-light:#E7C468;
+    --diya:#E1672B; --ivory:#FBF6EC; --maroon:#7A2048; --leaf:#2F6B3C;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Noto Sans',sans-serif; background:var(--ivory); color:var(--ink);}
+  h1,h2,h3,.display{font-family:'Baloo 2',sans-serif; font-weight:700;}
+
+  /* Loading / auth gate */
+  #gate{
+    position:fixed; inset:0; background:var(--ink); color:#fff;
+    display:flex; align-items:center; justify-content:center;
+    flex-direction:column; gap:14px; z-index:999; font-family:'Baloo 2';
+  }
+  #gate.hidden{display:none;}
+
+  header{
+    background:var(--ink); color:#fff; padding:16px 24px;
+    display:flex; justify-content:space-between; align-items:center;
+    border-bottom:3px solid var(--gold);
+  }
+  header .title{font-family:'Baloo 2'; font-weight:800; font-size:1.15rem;}
+  header .sub{font-size:.75rem; color:var(--gold-light);}
+  header .who{font-size:.85rem; color:#d9e0ef; display:flex; align-items:center; gap:14px;}
+  header button.logout{
+    background:transparent; border:1px solid rgba(255,255,255,.4); color:#fff;
+    padding:6px 14px; border-radius:6px; font-size:.8rem; cursor:pointer;
+  }
+
+  .wrap{max-width:1200px; margin:0 auto; padding:26px 20px 60px;}
+
+  .toolbar{
+    display:flex; gap:12px; flex-wrap:wrap; align-items:center;
+    background:#fff; padding:16px; border-radius:10px; box-shadow:0 6px 18px rgba(22,35,63,.08);
+    margin-bottom:22px;
+  }
+  .toolbar input, .toolbar select{
+    padding:9px 12px; border-radius:6px; border:1.5px solid #dde1ee; font-size:.9rem;
+    font-family:'Noto Sans';
+  }
+  .toolbar input[type=text]{flex:1; min-width:180px;}
+  .btn{
+    padding:9px 18px; border-radius:6px; border:none; font-weight:700; font-size:.88rem;
+    cursor:pointer; font-family:'Noto Sans';
+  }
+  .btn-primary{background:var(--diya); color:#fff;}
+  .btn-primary:hover{background:#c9541c;}
+  .btn-ghost{background:var(--ivory); color:var(--ink); border:1.5px solid #dde1ee;}
+  .btn-danger{background:#fdeceb; color:#b3261e;}
+  .btn-sm{padding:6px 12px; font-size:.78rem;}
+
+  .count-chip{
+    font-size:.8rem; color:var(--maroon); font-weight:700;
+    background:#f5e9ee; padding:6px 14px; border-radius:20px;
+  }
+
+  table{width:100%; border-collapse:collapse; background:#fff; border-radius:10px; overflow:hidden; box-shadow:0 6px 18px rgba(22,35,63,.08);}
+  thead{background:var(--ink); color:#fff;}
+  th, td{padding:12px 14px; text-align:left; font-size:.88rem;}
+  tbody tr{border-bottom:1px solid #eef0f6;}
+  tbody tr:hover{background:#fbf8f0;}
+  .avatar-cell{display:flex; align-items:center; gap:10px;}
+  .avatar-circle{
+    width:34px; height:34px; border-radius:50%; background:var(--gold);
+    color:#fff; display:flex; align-items:center; justify-content:center;
+    font-family:'Baloo 2'; font-weight:700; font-size:.85rem; flex-shrink:0;
+  }
+  .tag{
+    display:inline-block; padding:3px 10px; border-radius:20px; font-size:.72rem; font-weight:700;
+    background:#eaf1eb; color:var(--leaf);
+  }
+  .actions-cell{display:flex; gap:8px;}
+  .icon-btn{
+    border:none; background:#f2f3f8; padding:6px 10px; border-radius:6px; cursor:pointer; font-size:.8rem;
+  }
+  .icon-btn:hover{background:#e5e7f0;}
+  .empty-state{text-align:center; padding:50px 20px; color:#8290ad;}
+
+  /* Modal */
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(22,35,63,.55);
+    display:none; align-items:center; justify-content:center; z-index:200; padding:20px;
+  }
+  .modal-overlay.open{display:flex;}
+  .modal{
+    background:#fff; border-radius:12px; max-width:560px; width:100%;
+    max-height:88vh; overflow-y:auto; padding:28px;
+    border-top:5px solid var(--gold);
+  }
+  .modal h2{font-size:1.2rem; margin-bottom:18px;}
+  .form-grid{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
+  .form-grid .full{grid-column:1 / -1;}
+  .form-grid label{font-size:.8rem; font-weight:600; color:#3b4560; display:block; margin-bottom:5px;}
+  .form-grid input, .form-grid select{
+    width:100%; padding:10px 12px; border-radius:6px; border:1.5px solid #dde1ee; font-size:.9rem;
+  }
+  .modal-actions{display:flex; justify-content:flex-end; gap:10px; margin-top:22px;}
+  #formMsg{font-size:.82rem; margin-top:10px; min-height:18px;}
+  #formMsg.error{color:#b3261e;}
+  #formMsg.success{color:var(--leaf);}
+
+  @media (max-width:640px){
+    .form-grid{grid-template-columns:1fr;}
+    table{font-size:.8rem;}
+    th, td{padding:9px 8px;}
+    .actions-cell{flex-direction:column;}
+  }
+</style>
+</head>
+<body>
+
+<div id="gate">
+  <div style="font-size:1.4rem;">🔒 Checking access…</div>
+  <div style="font-size:.85rem; color:#c9d2e8;">Krishna Little Flower School ERP</div>
+</div>
+
+<header>
+  <div>
+    <div class="title">Student Management</div>
+    <div class="sub">कृष्णा लिटिल फ्लावर स्कूल · Admin Panel</div>
+  </div>
+  <div class="who">
+    <span id="whoName"></span>
+    <button class="logout" id="logoutBtn">Log Out</button>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="toolbar">
+    <input type="text" id="searchBox" placeholder="🔍 Search by name or roll no...">
+    <select id="filterClass">
+      <option value="">All Classes</option>
+      <option>Play Group</option><option>Nursery</option><option>KG</option>
+      <option>Class 1</option><option>Class 2</option><option>Class 3</option>
+      <option>Class 4</option><option>Class 5</option><option>Class 6</option>
+      <option>Class 7</option><option>Class 8</option>
+    </select>
+    <select id="filterSection">
+      <option value="">All Sections</option>
+      <option>A</option><option>B</option><option>C</option>
+    </select>
+    <span class="count-chip" id="countChip">0 students</span>
+    <button class="btn btn-primary" id="addBtn">+ Add Student</button>
+  </div>
+
+  <div id="tableWrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Student</th>
+          <th>Class / Section</th>
+          <th>Roll No</th>
+          <th>Father's Name</th>
+          <th>Mobile</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="studentsBody"></tbody>
+    </table>
+    <div class="empty-state" id="emptyState" style="display:none;">
+      कोई student नहीं मिला। "+ Add Student" से शुरू करें।
+    </div>
+  </div>
+</div>
+
+<!-- Add/Edit Modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h2 id="modalTitle">Add Student</h2>
+    <form id="studentForm">
+      <input type="hidden" id="studentId">
+      <div class="form-grid">
+        <div class="full">
+          <label>Student Name *</label>
+          <input type="text" id="f_name" required>
+        </div>
+        <div>
+          <label>Father's Name</label>
+          <input type="text" id="f_father">
+        </div>
+        <div>
+          <label>Mother's Name</label>
+          <input type="text" id="f_mother">
+        </div>
+        <div>
+          <label>Class *</label>
+          <select id="f_class" required>
+            <option value="">Select</option>
+            <option>Play Group</option><option>Nursery</option><option>KG</option>
+            <option>Class 1</option><option>Class 2</option><option>Class 3</option>
+            <option>Class 4</option><option>Class 5</option><option>Class 6</option>
+            <option>Class 7</option><option>Class 8</option>
+          </select>
+        </div>
+        <div>
+          <label>Section</label>
+          <select id="f_section">
+            <option value="A">A</option><option value="B">B</option><option value="C">C</option>
+          </select>
+        </div>
+        <div>
+          <label>Roll No</label>
+          <input type="text" id="f_roll">
+        </div>
+        <div>
+          <label>Mobile</label>
+          <input type="text" id="f_mobile">
+        </div>
+        <div class="full">
+          <label>Address</label>
+          <input type="text" id="f_address">
+        </div>
+      </div>
+      <div id="formMsg"></div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" id="cancelBtn">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="saveBtn">Save Student</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+  import {
+    getAuth, onAuthStateChanged, signOut
+  } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+  import {
+    getFirestore, doc, getDoc, collection, addDoc, updateDoc, deleteDoc,
+    onSnapshot, query, orderBy
+  } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBrUPqnt05h_mGhEiITbibjvNpRkYUeRGA",
+    authDomain: "krishna-little-flower-school.firebaseapp.com",
+    projectId: "krishna-little-flower-school",
+    storageBucket: "krishna-little-flower-school.firebasestorage.app",
+    messagingSenderId: "891624867189",
+    appId: "1:891624867189:web:d917348216f3c2178c7f3c"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  const gate = document.getElementById('gate');
+  const whoName = document.getElementById('whoName');
+  let allStudents = [];
+
+  // ---------- Auth gate: only signed-in Admins may see this page ----------
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+      window.location.href = "login.html";
+      return;
+    }
+    const userDoc = await getDoc(doc(db, "users", user.uid));
+    if (!userDoc.exists() || userDoc.data().role !== "admin") {
+      alert("यह page सिर्फ Admin के लिए है।");
+      window.location.href = "login.html";
+      return;
+    }
+    whoName.textContent = "👤 " + (userDoc.data().name || user.email);
+    gate.classList.add('hidden');
+    startListening();
+  });
+
+  document.getElementById('logoutBtn').onclick = () => signOut(auth);
+
+  // ---------- Live student list from Firestore ----------
+  function startListening() {
+    const q = query(collection(db, "students"), orderBy("name"));
+    onSnapshot(q, (snap) => {
+      allStudents = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderTable();
+    }, (err) => {
+      console.error(err);
+      document.getElementById('tableWrap').innerHTML =
+        `<div class="empty-state">Data load करने में समस्या हुई: ${err.message}</div>`;
+    });
+  }
+
+  function renderTable() {
+    const search = document.getElementById('searchBox').value.trim().toLowerCase();
+    const fClass = document.getElementById('filterClass').value;
+    const fSection = document.getElementById('filterSection').value;
+
+    let filtered = allStudents.filter(s => {
+      const matchesSearch = !search ||
+        (s.name || '').toLowerCase().includes(search) ||
+        (s.rollNo || '').toLowerCase().includes(search);
+      const matchesClass = !fClass || s.class === fClass;
+      const matchesSection = !fSection || s.section === fSection;
+      return matchesSearch && matchesClass && matchesSection;
+    });
+
+    document.getElementById('countChip').textContent = `${filtered.length} students`;
+    const body = document.getElementById('studentsBody');
+    const empty = document.getElementById('emptyState');
+
+    if (filtered.length === 0) {
+      body.innerHTML = '';
+      empty.style.display = 'block';
+      return;
+    }
+    empty.style.display = 'none';
+
+    body.innerHTML = filtered.map(s => `
+      <tr>
+        <td>
+          <div class="avatar-cell">
+            <div class="avatar-circle">${(s.name || '?').charAt(0).toUpperCase()}</div>
+            <div>${escapeHtml(s.name || '')}</div>
+          </div>
+        </td>
+        <td><span class="tag">${escapeHtml(s.class || '-')} · ${escapeHtml(s.section || '-')}</span></td>
+        <td>${escapeHtml(s.rollNo || '-')}</td>
+        <td>${escapeHtml(s.father || '-')}</td>
+        <td>${escapeHtml(s.mobile || '-')}</td>
+        <td class="actions-cell">
+          <button class="icon-btn" onclick="window.__editStudent('${s.id}')">✏️ Edit</button>
+          <button class="icon-btn" onclick="window.__promoteStudent('${s.id}')">⬆️ Promote</button>
+          <button class="icon-btn" onclick="window.__deleteStudent('${s.id}')" style="color:#b3261e;">🗑️</button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  function escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  }
+
+  document.getElementById('searchBox').addEventListener('input', renderTable);
+  document.getElementById('filterClass').addEventListener('change', renderTable);
+  document.getElementById('filterSection').addEventListener('change', renderTable);
+
+  // ---------- Add / Edit modal ----------
+  const overlay = document.getElementById('modalOverlay');
+  const form = document.getElementById('studentForm');
+  const formMsg = document.getElementById('formMsg');
+
+  function openModal(editing = null) {
+    form.reset();
+    formMsg.textContent = '';
+    document.getElementById('studentId').value = '';
+    if (editing) {
+      document.getElementById('modalTitle').textContent = 'Edit Student';
+      document.getElementById('studentId').value = editing.id;
+      document.getElementById('f_name').value = editing.name || '';
+      document.getElementById('f_father').value = editing.father || '';
+      document.getElementById('f_mother').value = editing.mother || '';
+      document.getElementById('f_class').value = editing.class || '';
+      document.getElementById('f_section').value = editing.section || 'A';
+      document.getElementById('f_roll').value = editing.rollNo || '';
+      document.getElementById('f_mobile').value = editing.mobile || '';
+      document.getElementById('f_address').value = editing.address || '';
+    } else {
+      document.getElementById('modalTitle').textContent = 'Add Student';
+    }
+    overlay.classList.add('open');
+  }
+  function closeModal() { overlay.classList.remove('open'); }
+
+  document.getElementById('addBtn').onclick = () => openModal();
+  document.getElementById('cancelBtn').onclick = closeModal;
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id = document.getElementById('studentId').value;
+    const data = {
+      name: document.getElementById('f_name').value.trim(),
+      father: document.getElementById('f_father').value.trim(),
+      mother: document.getElementById('f_mother').value.trim(),
+      class: document.getElementById('f_class').value,
+      section: document.getElementById('f_section').value,
+      rollNo: document.getElementById('f_roll').value.trim(),
+      mobile: document.getElementById('f_mobile').value.trim(),
+      address: document.getElementById('f_address').value.trim(),
+    };
+    try {
+      if (id) {
+        await updateDoc(doc(db, "students", id), data);
+      } else {
+        await addDoc(collection(db, "students"), data);
+      }
+      formMsg.className = 'success';
+      formMsg.textContent = 'Saved!';
+      setTimeout(closeModal, 500);
+    } catch (err) {
+      console.error(err);
+      formMsg.className = 'error';
+      formMsg.textContent = 'Error: ' + err.message;
+    }
+  });
+
+  // ---------- Row actions (exposed on window for inline onclick) ----------
+  window.__editStudent = (id) => {
+    const s = allStudents.find(x => x.id === id);
+    if (s) openModal(s);
+  };
+
+  window.__deleteStudent = async (id) => {
+    if (!confirm('क्या आप इस student को हटाना चाहते हैं?')) return;
+    try {
+      await deleteDoc(doc(db, "students", id));
+    } catch (err) {
+      alert('Error: ' + err.message);
+    }
+  };
+
+  const CLASS_ORDER = ["Play Group","Nursery","KG","Class 1","Class 2","Class 3","Class 4","Class 5","Class 6","Class 7","Class 8"];
+
+  window.__promoteStudent = async (id) => {
+    const s = allStudents.find(x => x.id === id);
+    if (!s) return;
+    const idx = CLASS_ORDER.indexOf(s.class);
+    if (idx === -1 || idx === CLASS_ORDER.length - 1) {
+      alert('यह student पहले से सबसे ऊँची class में है, या class set नहीं है।');
+      return;
+    }
+    const nextClass = CLASS_ORDER[idx + 1];
+    if (!confirm(`${s.name} को "${nextClass}" में promote करें?`)) return;
+    try {
+      await updateDoc(doc(db, "students", id), { class: nextClass });
+    } catch (err) {
+      alert('Error: ' + err.message);
+    }
+  };
+</script>
+
+</body>
+</html>
